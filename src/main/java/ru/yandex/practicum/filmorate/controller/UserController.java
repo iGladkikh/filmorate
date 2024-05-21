@@ -15,8 +15,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/users")
 public class UserController extends Controller<User> {
-    private static final String USER_NOT_FOUND_ERROR = "Пользователь не найден";
-    private static final String EMAIL_IS_DUPLICATE_ERROR = "Этот email уже используется";
     private final Map<Long, User> users = new HashMap<>();
 
     @Override
@@ -28,10 +26,10 @@ public class UserController extends Controller<User> {
     @Override
     @PostMapping
     public User create(@RequestBody @Valid User user) {
-        log.debug("Action: create User, data: {}", user);
+        log.debug(DEBUG_LOG_PATTERN, "create", user);
         try {
             if (isEmailAlreadyUsed(user.getEmail())) {
-                throw new DuplicateElementException(EMAIL_IS_DUPLICATE_ERROR);
+                throw new DuplicateElementException("Этот email уже используется");
             }
 
             user.setId(getNextId(users));
@@ -49,12 +47,12 @@ public class UserController extends Controller<User> {
     @Override
     @PutMapping
     public User update(@RequestBody @Valid User newUser) {
-        log.debug("Action: update, data: {}", newUser);
+        log.debug(DEBUG_LOG_PATTERN, "update", newUser);
         try {
             if (users.containsKey(newUser.getId())) {
                 User oldUser = users.get(newUser.getId());
                 if (!oldUser.getEmail().equals(newUser.getEmail()) && isEmailAlreadyUsed(newUser.getEmail())) {
-                    throw new DuplicateElementException(EMAIL_IS_DUPLICATE_ERROR);
+                    throw new DuplicateElementException("Этот email уже используется");
                 }
 
                 if (newUser.getName() != null) {
@@ -71,7 +69,7 @@ public class UserController extends Controller<User> {
                 }
                 return oldUser;
             }
-            throw new NotFoundException(USER_NOT_FOUND_ERROR);
+            throw new NotFoundException("Пользователь не найден");
         } catch (Exception e) {
             log.error(ERROR_LOG_PATTERN, "update", newUser, e.getMessage(), e.getClass());
             throw e;

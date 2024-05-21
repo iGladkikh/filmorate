@@ -9,11 +9,11 @@ abstract class Controller<T> {
 
     abstract Collection<T> findAll();
 
-    abstract T create(T  entity);
+    abstract T create(T entity);
 
     abstract T update(T entity);
 
-    long getNextId(Map<Long, T> entities) {
+    protected long getNextId(Map<Long, T> entities) {
         long currentMaxId = entities.keySet().stream().mapToLong(id -> id).max().orElse(0);
         return ++currentMaxId;
     }

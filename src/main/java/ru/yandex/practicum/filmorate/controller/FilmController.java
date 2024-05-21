@@ -15,8 +15,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/films")
 public class FilmController extends Controller<Film> {
-    private static final String FILM_NOT_FOUND_ERROR = "Фильм не найден";
-    private static final String FILM_IS_DUPLICATE_ERROR = "Такой фильм уже существует";
     private final Map<Long, Film> films = new HashMap<>();
 
     @Override
@@ -28,10 +26,10 @@ public class FilmController extends Controller<Film> {
     @Override
     @PostMapping
     public Film create(@RequestBody @Valid Film film) {
-        log.debug(DEBUG_LOG_PATTERN, "create", film.toString());
+        log.debug(DEBUG_LOG_PATTERN, "create", film);
         try {
             if (films.containsValue(film)) {
-                throw new DuplicateElementException(FILM_IS_DUPLICATE_ERROR);
+                throw new DuplicateElementException("Такой фильм уже существует");
             }
             film.setId(getNextId(films));
             films.put(film.getId(), film);
@@ -45,11 +43,11 @@ public class FilmController extends Controller<Film> {
     @Override
     @PutMapping
     public Film update(@RequestBody @Valid Film newFilm) {
-        log.debug(DEBUG_LOG_PATTERN, "update", newFilm.toString());
+        log.debug(DEBUG_LOG_PATTERN, "update", newFilm);
         try {
             if (films.containsKey(newFilm.getId())) {
                 if ((newFilm.getName() != null || newFilm.getReleaseDate() != null) && films.containsValue(newFilm)) {
-                    throw new DuplicateElementException(FILM_IS_DUPLICATE_ERROR);
+                    throw new DuplicateElementException("Такой фильм уже существует");
                 }
 
                 Film oldFilm = films.get(newFilm.getId());
@@ -69,7 +67,7 @@ public class FilmController extends Controller<Film> {
 
                 return oldFilm;
             }
-            throw new NotFoundException(FILM_NOT_FOUND_ERROR);
+            throw new NotFoundException("Фильм не найден");
         } catch (Exception e) {
             log.error(ERROR_LOG_PATTERN, "update", newFilm, e.getMessage(), e.getClass());
             throw e;
