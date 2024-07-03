@@ -1,23 +1,30 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-@Slf4j
 @Getter
 @Component
-@Primary
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
 
     @Override
     public List<User> findAll() {
         return List.copyOf(users.values());
+    }
+
+    @Override
+    public List<User> findByIds(Collection<Long> ids) {
+        return users.values().stream()
+                .filter(user -> ids.contains(user.getId()))
+                .toList();
     }
 
     @Override
@@ -28,9 +35,6 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User create(User user) {
         user.setId(getNextId());
-        if (user.getFriends() == null) {
-            user.setFriends(new HashSet<>());
-        }
         users.put(user.getId(), user);
         return user;
     }
@@ -44,6 +48,29 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public void delete(long id) {
         users.remove(id);
+    }
+
+    @Override
+    public Optional<User> findEqual(User user) {
+            return users.values().stream()
+                    .filter(u -> u.equals(user))
+                    .findFirst();
+    }
+
+    @Override
+    public User addFriend(long userId, long friendId) {
+        User user = users.get(userId);
+        user.getFriends().add(friendId);
+        users.get(friendId).getFriends().add(userId);
+        return user;
+    }
+
+    @Override
+    public User deleteFriend(long userId, long friendId) {
+        User user = users.get(userId);
+        user.getFriends().remove(friendId);
+        users.get(friendId).getFriends().remove(userId);
+        return user;
     }
 
     private long getNextId() {

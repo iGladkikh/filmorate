@@ -1,15 +1,17 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.Getter;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Getter
 @Component
-@Primary
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
@@ -26,9 +28,6 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film create(Film film) {
         film.setId(getNextId());
-        if (film.getLikes() == null) {
-            film.setLikes(new HashSet<>());
-        }
         films.put(film.getId(), film);
         return film;
     }
@@ -45,11 +44,32 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
+    public Optional<Film> findEqual(Film film) {
+        return films.values().stream()
+                .filter(f -> f.equals(film))
+                .findFirst();
+    }
+
+    @Override
     public List<Film> findPopular(Comparator<Film> comparator, int count) {
         return films.values().stream()
                 .sorted(comparator)
                 .limit(count)
                 .toList();
+    }
+
+    @Override
+    public Film addLike(long filmId, long userId) {
+        Film film = films.get(filmId);
+        film.getLikes().add(userId);
+        return film;
+    }
+
+    @Override
+    public Film deleteLike(long filmId, long userId) {
+        Film film = films.get(filmId);
+        film.getLikes().remove(userId);
+        return film;
     }
 
     private long getNextId() {

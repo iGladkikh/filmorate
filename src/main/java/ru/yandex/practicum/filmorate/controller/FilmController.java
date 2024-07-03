@@ -1,9 +1,14 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -12,42 +17,18 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/films")
-public class FilmController {
+public class FilmController extends BaseController<Film> {
     private final FilmService filmService;
 
     @Autowired
     public FilmController(FilmService filmService) {
+        super(filmService);
         this.filmService = filmService;
-    }
-
-    @GetMapping
-    public List<Film> findAll() {
-        return filmService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public Film findById(@PathVariable long id) {
-        return filmService.findById(id);
     }
 
     @GetMapping("/popular")
     public List<Film> findPopular(@RequestParam Optional<Integer> count) {
         return filmService.findPopular(count);
-    }
-
-    @PostMapping
-    public Film create(@RequestBody @Valid Film film) {
-        return filmService.create(film);
-    }
-
-    @PutMapping
-    public Film update(@RequestBody @Valid Film newFilm) {
-        return filmService.update(newFilm);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable @Positive long id) {
-        filmService.delete(id);
     }
 
     @PutMapping("/{id}/like/{userId}")

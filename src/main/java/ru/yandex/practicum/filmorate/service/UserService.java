@@ -15,35 +15,29 @@ import java.util.*;
 @Slf4j
 @Getter
 @Service
-public class UserService {
+public class UserService extends BaseService<User> {
     private final UserStorage userStorage;
 
     @Autowired
     public UserService(UserStorage userStorage) {
+        super(userStorage);
         this.userStorage = userStorage;
     }
 
-    public List<User> findAll() {
-        return userStorage.findAll();
-    }
-
-    public User findById(long id) {
-        Optional<User> userOptional = userStorage.findById(id);
-        if (userOptional.isEmpty()) {
-            throw new NotFoundException("Пользователь не найден");
-        }
-        return userOptional.get();
-    }
-
+    @Override
     public User create(User user) {
         log.debug(LoggerMessagePattern.DEBUG, "create", user);
         try {
-            if (findUserByIdEmail(user.getEmail()).isPresent()) {
+            if (userStorage.findEqual(user).isPresent()) {
                 throw new DuplicatedDataException("Этот email уже используется");
             }
 
             if (user.getName() == null || user.getName().isBlank()) {
                 user.setName(user.getLogin());
+            }
+
+            if (user.getFriends() == null) {
+                user.setFriends(new HashSet<>());
             }
             return userStorage.create(user);
         } catch (Exception e) {
@@ -52,6 +46,7 @@ public class UserService {
         }
     }
 
+    @Override
     public User update(User newUser) {
         log.debug(LoggerMessagePattern.DEBUG, "update", newUser);
         try {
@@ -62,7 +57,7 @@ public class UserService {
 
             fillEmptyFields(newUser, oldUserOptional.get());
 
-            Optional<User> userWithSameEmail = findUserByIdEmail(newUser.getEmail());
+            Optional<User> userWithSameEmail = userStorage.findEqual(newUser);
             if (userWithSameEmail.isPresent() && !Objects.equals(userWithSameEmail.get().getId(), newUser.getId())) {
                 throw new DuplicatedDataException("Этот email уже используется");
             }
@@ -90,12 +85,6 @@ public class UserService {
         target.setFriends(source.getFriends());
     }
 
-    private Optional<User> findUserByIdEmail(String email) {
-        return userStorage.findAll().stream()
-                .filter(user -> user.getEmail().equals(email))
-                .findFirst();
-    }
-
     public List<User> findFriends(long id) {
         log.debug(LoggerMessagePattern.DEBUG, "find friends", "userId=%d".formatted(id));
         try {
@@ -105,7 +94,7 @@ public class UserService {
             }
 
             Set<Long> friends = userOptional.get().getFriends();
-            return findByIds(friends);
+            return userStorage.findByIds(friends);
         } catch (Exception e) {
             log.warn(
                     LoggerMessagePattern.WARN,
@@ -132,7 +121,7 @@ public class UserService {
 
             Set<Long> commonFriends = new HashSet<>(friends1);
             commonFriends.retainAll(friends2);
-            return findByIds(commonFriends);
+            return userStorage.findByIds(commonFriends);
         } catch (Exception e) {
             log.warn(
                     LoggerMessagePattern.WARN,
@@ -141,25 +130,6 @@ public class UserService {
                     e.getMessage(),
                     e.getClass()
             );
-            throw e;
-        }
-    }
-
-    public List<User> findByIds(Collection<Long> ids) {
-        return userStorage.findAll().stream()
-                .filter(user -> ids.contains(user.getId()))
-                .toList();
-    }
-
-    public void delete(long id) {
-        log.debug(LoggerMessagePattern.DEBUG, "delete", "id=%d".formatted(id));
-        try {
-            if (userStorage.findById(id).isEmpty()) {
-                throw new NotFoundException("Пользователь не найден");
-            }
-            userStorage.delete(id);
-        } catch (Exception e) {
-            log.warn(LoggerMessagePattern.WARN, "delete", "id=%d".formatted(id), e.getMessage(), e.getClass());
             throw e;
         }
     }
@@ -174,16 +144,11 @@ public class UserService {
             }
 
             User user = userOptional.get();
-            User friend = friendOptional.get();
-
             if (user.getFriends().contains(friendId)) {
                 throw new DuplicatedDataException("Пользователь #%d ранее добавлен в список друзей".formatted(friendId));
             }
 
-            user.getFriends().add(friendId);
-            friend.getFriends().add(userId);
-
-            return user;
+            return userStorage.addFriend(userId, friendId);
         } catch (Exception e) {
             log.warn(
                     LoggerMessagePattern.WARN,
@@ -205,13 +170,7 @@ public class UserService {
                 throw new NotFoundException("Пользователь не найден");
             }
 
-            User user = userOptional.get();
-            user.getFriends().remove(friendId);
-
-            User friend = friendOptional.get();
-            friend.getFriends().remove(userId);
-
-            return user;
+            return userStorage.deleteFriend(userId, friendId);
         } catch (Exception e) {
             log.warn(
                     LoggerMessagePattern.WARN,

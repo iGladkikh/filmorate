@@ -1,9 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -11,37 +15,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
-public class UserController {
+public class UserController extends BaseController<User> {
     private final UserService userService;
 
     @Autowired
     public UserController(UserService userService) {
+        super(userService);
         this.userService = userService;
-    }
-
-    @GetMapping
-    public List<User> findAll() {
-        return userService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public User findById(@PathVariable @Positive long id) {
-        return userService.findById(id);
-    }
-
-    @PostMapping
-    public User create(@RequestBody @Valid User user) {
-        return userService.create(user);
-    }
-
-    @PutMapping
-    public User update(@RequestBody @Valid User newUser) {
-        return userService.update(newUser);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable @Positive long id) {
-        userService.delete(id);
     }
 
     @GetMapping("/{id}/friends")
