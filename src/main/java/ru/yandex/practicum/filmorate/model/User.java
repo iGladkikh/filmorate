@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.jackson.deserializer.SetOfNumbersDeserializer;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 @Data
 @EqualsAndHashCode(of = {"email"})
+@Builder
 public class User {
     private Long id;
 
